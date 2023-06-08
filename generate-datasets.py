@@ -26,9 +26,12 @@ class DatasetGenerator:
         self.progress_file = os.path.join(self.dataset_folder, f'{dataset_name}_progress.txt')
         if not os.path.exists(self.progress_file):
             open(self.progress_file, 'w').close()
+        os.environ['VOCAB'] = f'{self.vocab}'
+        os.environ['INFERENCE_SEQUENCE'] = f'{self.inference_sequence}'
 
     def run_command(self, command):
-        process = subprocess.Popen(command, shell=True)
+        print(f'Running command {command}')
+        process = subprocess.Popen(command, executable='/bin/bash', shell=True)
         process.wait()
         if process.returncode != 0:
             raise Exception("Command failed: " + command)
@@ -52,7 +55,8 @@ class DatasetGenerator:
 
     def generate_raw_audio_dataset(self):
         print("\n\n>>> generating raw audio dataset\n")
-        self.run_command(f"time VOCAB={self.vocab} INFERENCE_SEQUENCE={self.inference_sequence} python -m training.run.generate_raw_audio_dataset -i {self.common_voice_dataset_path} --positive-pct 100 --negative-pct {self.negative_pct} --overwrite true")
+        env = {'VOCAB': f'{self.vocab}', 'INFERENCE_SEQUENCE': f'{self.inference_sequence}'}
+        self.run_command(f'time python3 -m training.run.generate_raw_audio_dataset -i {self.common_voice_dataset_path} --positive-pct 100 --negative-pct {self.negative_pct} --overwrite true')
 
     def generate_alignment_for_positive_dataset(self):
         print(f"\n\n>>> generating alignment for the positive dataset using MFA: {self.pos_dataset_alignment}\n")
@@ -63,16 +67,16 @@ class DatasetGenerator:
 
     def attach_alignment_positive_dataset(self):
         print("\n\n>>> attaching the MFA alignment to the positive dataset\n")
-        self.run_command(f"time python -m training.run.attach_alignment --input-raw-audio-dataset \"{self.pos_dataset_path}\" --token-type word --alignment-type mfa --alignments-path \"{self.pos_dataset_alignment}\"")
+        self.run_command(f"time python3 -m training.run.attach_alignment --input-raw-audio-dataset \"{self.pos_dataset_path}\" --token-type word --alignment-type mfa --alignments-path \"{self.pos_dataset_alignment}\"")
 
     def attach_alignment_negative_dataset(self):
         if not self.skip_neg_dataset:
             print("\n\n>>> attaching mock alignment to the negative dataset\n")
-            self.run_command(f"time python -m training.run.attach_alignment --alignment-type stub --input-raw-audio-dataset \"{self.neg_dataset_path}\" --token-type word")
+            self.run_command(f"time python3 -m training.run.attach_alignment --alignment-type stub --input-raw-audio-dataset \"{self.neg_dataset_path}\" --token-type word")
 
     def stitch_vocab_samples(self):
         print("\n\n>>> stitching vocab samples to generate a dataset made up of stitched wakeword samples\n")
-        self.run_command(f"time VOCAB={self.vocab} INFERENCE_SEQUENCE={self.inference_sequence} python -m training.run.stitch_vocab_samples --dataset-path \"{self.pos_dataset_path}\"")
+        self.run_command(f"time python3 -m training.run.stitch_vocab_samples --dataset-path \"{self.pos_dataset_path}\"")
 
     def print_ready_dataset(self):
         print(f"\n\n>>> Dataset is ready for {self.vocab}\n")
@@ -86,3 +90,14 @@ class DatasetGenerator:
         self.check_and_run(self.attach_alignment_negative_dataset)
         self.check_and_run(self.stitch_vocab_samples)
         self.check_and_run(self.print_ready_dataset)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset_name')
+    args = parser.parse_args()
+    dg = DatasetGenerator(args.dataset_name)
+    dg.generate_dataset()
+
+
+if __name__ == '__main__':
+    main()
