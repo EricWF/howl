@@ -3,9 +3,13 @@ import subprocess
 import argparse
 import json
 
+COMMON_VOICE=os.path.expanduser('~/datasets/commonvoice/en')
+
 class DatasetGenerator:
 
-    def __init__(self, common_voice_dataset_path, dataset_name, inference_sequence, skip_neg_dataset):
+    def __init__(self,  dataset_name, inference_sequence=None, common_voice_dataset_path=COMMON_VOICE, skip_neg_dataset=False):
+        if inference_sequence is None:
+            inference_sequence = list(range(0, len(dataset_name.split('_'))))
         self.common_voice_dataset_path = common_voice_dataset_path
         self.dataset_name = dataset_name
         self.inference_sequence = inference_sequence
@@ -19,6 +23,9 @@ class DatasetGenerator:
         self.negative_pct = 0
         if not self.skip_neg_dataset:
             self.negative_pct = 5
+        self.progress_file = os.path.join(self.dataset_folder, f'{dataset_name}_progress.txt')
+        if not os.path.exists(self.progress_file):
+            open(self.progress_file, 'w').close()
 
     def run_command(self, command):
         process = subprocess.Popen(command, shell=True)
@@ -26,10 +33,22 @@ class DatasetGenerator:
         if process.returncode != 0:
             raise Exception("Command failed: " + command)
 
+    def check_and_run(self, step_method):
+        with open(self.progress_file, 'r+') as f:
+            if step_method.__name__ not in f.read().splitlines():
+                step_method()
+                f.write(f'{step_method.__name__}\n')
+
     def print_env_vars(self):
         print(f"COMMON_VOICE_DATASET_PATH: {self.common_voice_dataset_path}")
         print(f"DATASET_NAME: {self.dataset_name}")
         print(f"INFERENCE_SEQUENCE: {self.inference_sequence}")
+
+    def write_env_file(self):
+        with open('/tmp/env.txt', 'w') as file:
+            file.write(f"COMMON_VOICE_DATASET_PATH={self.common_voice_dataset_path}\n")
+            file.write(f"DATASET_NAME={self.dataset_name}\n")
+            file.write(f"INFERENCE_SEQUENCE={self.inference_sequence}\n")
 
     def generate_raw_audio_dataset(self):
         print("\n\n>>> generating raw audio dataset\n")
@@ -59,11 +78,11 @@ class DatasetGenerator:
         print(f"\n\n>>> Dataset is ready for {self.vocab}\n")
 
     def generate_dataset(self):
-        self.print_env_vars()
-
-        self.generate_raw_audio_dataset()
-        self.generate_alignment_for_positive_dataset()
-        self.attach_alignment_positive_dataset()
-        self.attach_alignment_negative_dataset()
-        self.stitch_vocab_samples()
-        self.print_ready_dataset()
+        self.check_and_run(self.print_env_vars)
+        self.check_and_run(self.write_env_file)
+        self.check_and_run(self.generate_raw_audio_dataset)
+        self.check_and_run(self.generate_alignment_for_positive_dataset)
+        self.check_and_run(self.attach_alignment_positive_dataset)
+        self.check_and_run(self.attach_alignment_negative_dataset)
+        self.check_and_run(self.stitch_vocab_samples)
+        self.check_and_run(self.print_ready_dataset)
