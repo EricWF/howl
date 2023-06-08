@@ -1,6 +1,7 @@
 #bin/bash
 set -e
 set -v
+set -x
 
 COMMON_VOICE_DATASET_PATH=${1} # common voice dataset path
 DATASET_NAME=${2} # underscore separated wakeword (e.g. hey_fire_fox)
@@ -19,6 +20,9 @@ fi
 printf "COMMON_VOICE_DATASET_PATH: ${COMMON_VOICE_DATASET_PATH}\n"
 printf "DATASET_NAME: ${DATASET_NAME}\n"
 printf "INFERENCE_SEQUENCE: ${INFERENCE_SEQUENCE}\n"
+echo COMMON_VOICE_DATASET_PATH=${COMMON_VOICE_DATASET_PATH} > /tmp/env.txt
+echo DATASET_NAME=${DATASET_NAME} >> /tmp/env.txt
+echo INFERENCE_SEQUENCE=${INFERENCE_SEQUENCE} >> /tmp/env.txt
 
 VOCAB="["
 IFS='_'

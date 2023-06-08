@@ -29,6 +29,8 @@ def hey_fire_fox(pretrained=True, **kwargs):
     engine, ctx = _load_model(pretrained, "res8", "howl/hey-fire-fox", **kwargs)
     return engine, ctx
 
+def stop(pretrained=True, **kwargs):
+    engine, ctx = _load_model(pretrained, "res8", "howl/stop", **kwargs)
 
 def _load_model(
     pretrained: bool, model_name: str, workspace_path: str, device: str, **kwargs

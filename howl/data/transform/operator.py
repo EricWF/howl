@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import random
 from typing import Iterable, List, Sequence
 
@@ -91,7 +94,10 @@ def tensorize_audio_data(
 ):
     lengths = np.array([audio_data.size(-1) for audio_data in audio_data_lst])
     sort_indices = np.argsort(-lengths)
-    audio_data_lst = np.array(audio_data_lst, dtype=object)[sort_indices].tolist()
+
+    new_arr = np.array(audio_data_lst, dtype=object)
+
+    audio_data_lst = new_arr[sort_indices].tolist()
     extra_data_lists = {k: np.array(v, dtype=object)[sort_indices].tolist() for k, v in extra_data_lists.items()}
 
     if max_length is None:

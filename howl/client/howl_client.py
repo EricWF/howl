@@ -122,7 +122,9 @@ class HowlClient:
         self._audio = pyaudio.PyAudio()
         for idx in range(self._audio.get_device_count()):
             info = self._audio.get_device_info_by_index(idx)
-            if info["name"] == "pulse" or info["name"] == "sysdefault":
+            import pprint
+            pprint.pprint(info)
+            if info["name"] == "pulse" or info["name"] == "pipewire":
                 chosen_idx = idx
                 break
 

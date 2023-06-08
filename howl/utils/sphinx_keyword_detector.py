@@ -22,8 +22,12 @@ class SphinxKeywordDetector():
         audio = AudioFile(**self.kws_config)
 
         for phrase in audio:
-            result = phrase.segments(detailed=True)
-
+            try:
+                result = phrase.segments(detailed=True)
+            except TypeError as e:
+                print('Caught type error while generating stitched sample')
+                print(e)
+                continue
             # TODO:: confirm that when multiple keywords are detected, every detection is valid
             if len(result) == 1:
                 start_time = result[0][2] * 10
