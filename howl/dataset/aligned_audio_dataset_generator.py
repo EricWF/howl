@@ -195,6 +195,7 @@ class AlignedAudioDatasetGenerator:
                     AlignedAudioDatasetGenerator._generate_metadata_with_alignment, alignments=self.alignments,
                 ),
                 raw_audio_dataset.metadata_list,
+                chunksize=512
             ),
             desc=f"generating aligned metadata for {raw_audio_dataset}",
             total=(len(raw_audio_dataset)),
