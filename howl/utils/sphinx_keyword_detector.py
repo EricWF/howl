@@ -17,16 +17,15 @@ class SphinxKeywordDetector():
     def detect(self, file_name):
 
         kws_results = []
-
-        self.kws_config['audio_file'] = file_name
-        audio = AudioFile(**self.kws_config)
+        audio = AudioFile(audio_file=file_name, **self.kws_config)
 
         for phrase in audio:
             try:
                 result = phrase.segments(detailed=True)
             except TypeError as e:
-                print('Caught type error while generating stitched sample')
-                print(e)
+                #print('Caught type error while generating stitched sample')
+                #print('Using filename: %s' % file_name)
+                #raise e
                 continue
             # TODO:: confirm that when multiple keywords are detected, every detection is valid
             if len(result) == 1:

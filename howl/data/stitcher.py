@@ -13,6 +13,7 @@ from howl.data.common.vocab import Vocab
 from howl.data.dataset.dataset import AudioDataset
 from howl.settings import SETTINGS
 from howl.utils.sphinx_keyword_detector import SphinxKeywordDetector
+import tempfile
 
 __all__ = ["WordStitcher"]
 
@@ -152,19 +153,20 @@ class WordStitcher(Stitcher):
             audio_data = torch.cat([labelled_data.audio_data for labelled_data in sample_set])
 
             if self.validate_stitched_sample:
-                temp_audio_file_path = "/tmp/temp.wav"
-                soundfile.write(temp_audio_file_path, audio_data.numpy(), self.sample_rate)
+                with tempfile.NamedTemporaryFile(suffix='.wav', prefix='stitched-example-', delete=True) as f:
+                    temp_audio_file_path = f.name
+                    soundfile.write(temp_audio_file_path, audio_data.numpy(), self.sample_rate)
 
-                keyword_exists = True
-                for detector in self.keyword_detector:
-                    # sphinx keyword detection may not be sufficient for audio with repeated words
-                    if len(detector.detect(temp_audio_file_path)) == 0:
-                        keyword_exists = False
-                        break
+                    keyword_exists = True
+                    for detector in self.keyword_detector:
+                        # sphinx keyword detection may not be sufficient for audio with repeated words
+                        if len(detector.detect(temp_audio_file_path)) == 0:
+                            keyword_exists = False
+                            break
 
-                if keyword_exists:
-                    num_skipped_samples += 1
-                    continue
+                    if keyword_exists:
+                        num_skipped_samples += 1
+                        continue
 
             metatdata = AudioClipMetadata(
                 path=Path(

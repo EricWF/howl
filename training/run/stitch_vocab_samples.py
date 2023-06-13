@@ -53,6 +53,8 @@ def main():
 
     args = parser.parse_args()
 
+    import pprint
+    pprint.pprint(SETTINGS.training)
     vocab = Vocab(SETTINGS.training.vocab)
     if len(vocab) <= 1:
         Logger.warning(f"Word stitching require at least two words: {vocab}")

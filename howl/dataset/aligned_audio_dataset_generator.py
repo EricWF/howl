@@ -104,6 +104,7 @@ class AlignedAudioDatasetGenerator:
                     AlignedAudioDatasetGenerator._load_mfa_alignment, use_phone=(token_type == TokenType.PHONE.value)
                 ),
                 alignment_file_paths,
+                chunksize=512
             ),
             desc=f"loading alignments from {alignments_path}",
             total=(len(alignment_file_paths)),

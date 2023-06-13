@@ -42,6 +42,12 @@ class ModelTrainer:
 
 # Example usage:
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--env-file', type=str, required=True)
+    parser.add_argument('workspace-name')
+    parser.add_argument('dataset-name')
+    args = parser.parse_args()
+    root = Path(__file__).abspath().parent
 
-    trainer = ModelTrainer("path/to/env", "res8", "path/to/workspace", ["path/to/dataset1", "path/to/dataset2"])
+    trainer = ModelTrainer("path/to/env", "res8", os.path.join(root, 'workspaces', ["path/to/dataset1", "path/to/dataset2"])
     trainer.train()
