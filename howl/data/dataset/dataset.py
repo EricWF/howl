@@ -193,6 +193,11 @@ class AudioDataset(tud.Dataset, Generic[GenericTypeT]):
         """
         pool = multiprocessing.Pool(processes=SETTINGS.resource.cpu_count)
 
+        chunksize, extra = divmod(len(self), SETTINGS.resource.cpu_count * 4)
+        if extra:
+            chunksize += 1
+        chunksize = min(chunksize, 128)
+
         statistics_list = tqdm(
             pool.imap(
                 functools.partial(
@@ -205,6 +210,7 @@ class AudioDataset(tud.Dataset, Generic[GenericTypeT]):
                     top_db=top_db,
                 ),
                 self.metadata_list,
+                chunksize=chunksize
             ),
             desc="Computing statistics",
             total=(len(self)),

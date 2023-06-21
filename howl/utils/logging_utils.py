@@ -25,6 +25,7 @@ def setup_logger(name, level=logging.INFO, use_stdout=True, log_path=None):
     coloredlogs.install(level=level, fmt=log_format)
     logger = logging.getLogger(name)
 
+
     # Remove existing handlers if there are any
     if logger.hasHandlers():
         logging.warning(f"Removing existing handlers from {name} logger")

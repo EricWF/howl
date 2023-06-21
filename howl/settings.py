@@ -9,7 +9,7 @@ __all__ = ["AudioSettings", "DatasetSettings", "SETTINGS"]
 class ResourceSettings(BaseSettings):
     """Base settings for computational resources"""
 
-    cpu_count: int = max(multiprocessing.cpu_count() // 2, 1)
+    cpu_count: int = max(multiprocessing.cpu_count(), 1)
 
 
 class CacheSettings(BaseSettings):
@@ -56,7 +56,7 @@ class TrainingSettings(BaseSettings):
     num_labels: int = 2
     learning_rate: float = 1e-3
     device: str = "cuda:0"
-    batch_size: int = 16
+    batch_size: int = 2
     lr_decay: float = 0.955
     max_window_size_seconds: float = 0.75
     eval_window_size_seconds: float = 0.75

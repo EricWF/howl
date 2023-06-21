@@ -3,8 +3,11 @@ import subprocess
 import argparse
 import json
 from pathlib import Path
+import multiprocessing
 
-COMMON_VOICE=os.path.expanduser('~/datasets/commonvoice/en')
+COMMON_VOICE=os.path.expanduser('~/ai/datasets/cv-corpus/en')
+
+NUM_CPUS = multiprocessing.cpu_count()
 
 class DatasetGenerator:
 
@@ -23,6 +26,8 @@ class DatasetGenerator:
         self.neg_dataset_path = os.path.join(self.dataset_folder, self.dataset_name, "negative")
         self.pos_dataset_path = os.path.join(self.dataset_folder, self.dataset_name, "positive")
         self.pos_dataset_alignment = os.path.join(self.pos_dataset_path, "alignment")
+        root = Path(__file__).absolute().parent
+        self.env_file_path = Path(root, 'envs', self.dataset_name).with_suffix('.env')
         self.mfa_folder = "./montreal-forced-aligner"
         self.negative_pct = 0
         if not self.skip_neg_dataset:
@@ -51,11 +56,6 @@ class DatasetGenerator:
         print(f"DATASET_NAME: {self.dataset_name}")
         print(f"INFERENCE_SEQUENCE: {self.inference_sequence}")
 
-    def write_env_file(self):
-        with open('/tmp/env.txt', 'w') as file:
-            file.write(f"COMMON_VOICE_DATASET_PATH={self.common_voice_dataset_path}\n")
-            file.write(f"DATASET_NAME={self.dataset_name}\n")
-            file.write(f"INFERENCE_SEQUENCE={self.inference_sequence}\n")
 
     def generate_raw_audio_dataset(self):
         print("\n\n>>> generating raw audio dataset\n")
@@ -66,7 +66,7 @@ class DatasetGenerator:
         print(f"\n\n>>> generating alignment for the positive dataset using MFA: {self.pos_dataset_alignment}\n")
         os.makedirs(self.pos_dataset_alignment, exist_ok=True)
         os.chdir(self.mfa_folder)
-        self.run_command(f"time yes n | ./bin/mfa_align --verbose --clean --num_jobs 60 \"../{self.pos_dataset_path}/audio\" librispeech-lexicon.txt pretrained_models/english.zip \"../{self.pos_dataset_alignment}\"")
+        self.run_command(f"time yes n | ./bin/mfa_align --verbose --clean --num_jobs {NUM_CPUS} \"../{self.pos_dataset_path}/audio\" librispeech-lexicon.txt pretrained_models/english.zip \"../{self.pos_dataset_alignment}\"")
         os.chdir('..')
 
     def attach_alignment_positive_dataset(self):
@@ -96,25 +96,29 @@ export BATCH_SIZE=16
 export MAX_WINDOW_SIZE_SECONDS=0.5
 export USE_NOISE_DATASET=False
 export NUM_MELS=40
-export INFERENCE_SEQUENCE={self.inference_sequence}
-export VOCAB={self.vocab}
+export INFERENCE_SEQUENCE="{self.inference_sequence}"
+export VOCAB='{self.vocab}'
 '''.strip()
 
-        root = Path(__file__).absolute().parent
-        env_path = Path(root, 'envs', self.dataset_name).with_suffix('.env')
-        with open(env_path, 'w') as f:
+
+        with open(self.env_file_path, 'w') as f:
             f.write(template + '\n')
 
     def generate_dataset(self):
         self.check_and_run(self.generate_env_file)
         self.check_and_run(self.print_env_vars)
-        self.check_and_run(self.write_env_file)
         self.check_and_run(self.generate_raw_audio_dataset)
         self.check_and_run(self.generate_alignment_for_positive_dataset)
         self.check_and_run(self.attach_alignment_positive_dataset)
         self.check_and_run(self.attach_alignment_negative_dataset)
         self.check_and_run(self.stitch_vocab_samples)
         self.check_and_run(self.print_ready_dataset)
+        self.check_and_run(self.train)
+
+    def train(self):
+        print("\n\n>>> attaching the MFA alignment to the positive dataset\n")
+        self.run_command(f"time bash ./train_model.sh \"{self.env_file_path}\" res8 \"workspace/{self.dataset_name}\" \"{self.pos_dataset_path}\" \"{self.neg_dataset_path}\"")
+
 
 def main():
     parser = argparse.ArgumentParser()

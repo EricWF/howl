@@ -1,0 +1,13 @@
+{
+  "model": "res8",
+  "workspace": "workspace/hey_howard",
+  "load_weights": false,
+  "load_last": false,
+  "dataset_paths": [
+    "datasets/hey_howard/positive/",
+    "datasets/hey_howard/negative/"
+  ],
+  "eval_freq": 10,
+  "eval": false,
+  "use_stitched_datasets": true
+}

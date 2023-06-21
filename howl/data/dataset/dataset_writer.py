@@ -96,6 +96,12 @@ class AudioDatasetWriter:
 
         pool = multiprocessing.Pool(processes=SETTINGS.resource.cpu_count)
 
+
+        chunksize, extra = divmod(len(self.dataset), SETTINGS.resource.cpu_count * 4)
+        if extra:
+            chunksize += 1
+        chunksize = min(chunksize, 128)
+
         metadata_list = tqdm(
             pool.imap(
                 functools.partial(
@@ -104,7 +110,9 @@ class AudioDatasetWriter:
                     sample_rate=self.dataset.sample_rate,
                     mono=self.dataset.mono,
                 ),
+
                 self.dataset.metadata_list,
+                chunksize=chunksize,
             ),
             desc=f"Generate {self.dataset.dataset_split} datasets",
             total=(len(self.dataset)),

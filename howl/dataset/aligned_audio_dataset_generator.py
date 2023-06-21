@@ -19,6 +19,12 @@ from training.align import MfaTextGridConverter, StubAligner
 from training.align.base import AlignedTranscription
 
 
+def calc_chunksize(iterable_size):
+    chunksize, extra = divmod(iterable_size, SETTINGS.resource.cpu_count * 4)
+    if extra:
+        chunksize += 1
+    return min(chunksize, 512)
+
 @unique
 class AlignmentType(str, Enum):
     """String based Enum for alignment type"""
@@ -104,7 +110,7 @@ class AlignedAudioDatasetGenerator:
                     AlignedAudioDatasetGenerator._load_mfa_alignment, use_phone=(token_type == TokenType.PHONE.value)
                 ),
                 alignment_file_paths,
-                chunksize=512
+                chunksize=calc_chunksize(len(alignment_file_paths))
             ),
             desc=f"loading alignments from {alignments_path}",
             total=(len(alignment_file_paths)),
@@ -150,6 +156,7 @@ class AlignedAudioDatasetGenerator:
                     mono=raw_audio_dataset.mono,
                 ),
                 raw_audio_dataset.metadata_list,
+                chunksize=calc_chunksize(len(raw_audio_dataset))
             ),
             desc=f"loading alignments for {raw_audio_dataset}",
             total=(len(raw_audio_dataset)),
@@ -196,7 +203,7 @@ class AlignedAudioDatasetGenerator:
                     AlignedAudioDatasetGenerator._generate_metadata_with_alignment, alignments=self.alignments,
                 ),
                 raw_audio_dataset.metadata_list,
-                chunksize=512
+                chunksize=calc_chunksize(len(raw_audio_dataset))
             ),
             desc=f"generating aligned metadata for {raw_audio_dataset}",
             total=(len(raw_audio_dataset)),
